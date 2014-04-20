@@ -1,0 +1,187 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8' />
+		<title>Dont Touch White Block</title>
+		<style>
+			body{
+				margin:0;
+			}
+			.stage{
+				margin:0px auto;
+			}
+			.bg{
+				margin:0 auto;
+				width:400px;
+				height: 400px;
+				position: relative;
+				background:white;
+				border:4px solid black;
+				overflow:hidden;
+				
+			}
+			.btnDiv{
+				position:absolute;
+				z-index:9;
+				border:3px solid rgb(32,46,68);
+				
+				/*
+				opacity: 1;
+				filter: alpha(opacity=100);
+				*/
+			}
+			.score{
+				margin:0 50px;
+				height:100px;
+				font-family:Arial, Helvetica, sans-serif,'微软雅黑';
+				font-size:32px;
+				font-weight: bold;
+				text-align:center;
+				line-height: 100px;
+			}
+			.score span{
+				display:block;
+				width:100px;
+				text-align: left;
+				float:left;
+			}
+			
+		</style>
+		<script type="text/javascript" src="js/jquery-1.11.0.js"></script>
+		<script>
+			$(function(){
+				//背景布局
+				var W=4; //宽度格数
+				var H=6; //高度格数
+				var Speed=100; //方块移动速度,值越小越快
+				var score=0; //得分
+				var timer=null; //计时器
+				var time=0; //经过时间
+				var gameBlockLines=[];
+				
+				//白色背景画布
+				var oBgDiv=$('<div></div>');
+				oBgDiv.addClass('bg');
+				$('.stage').append(oBgDiv);
+				//不可见按钮热区,画布倒数第2排可点击
+				var btnDivs=[];
+				for (var i=0;i<W;i++){
+					var btnDiv=$('<div></div>');
+					btnDiv.addClass('btnDiv');
+					btnDiv.css({
+						'width':oBgDiv.width()/W+'px',
+						'height':oBgDiv.height()/H*1+'px',
+						'top':oBgDiv.height()/H*(H-2)+'px',
+						'left':oBgDiv.width()/W*i+'px',
+					});
+					oBgDiv.append(btnDiv);
+					btnDivs.push(btnDiv);
+				}
+				
+				
+				
+				
+				//创造blockLine
+				function createBlockLine(currentRow){
+					var rand=parseInt(Math.random()*W);
+					var blockLine={currentRow:currentRow,nextRow:currentRow,blackPosition:rand};
+					return blockLine;
+				}
+				
+				//画出给定的blockLine,并为其添加divs元素数组
+				function drawLine(bL){
+					bL.divs=[];
+					for (var i=0;i<W;i++){
+						var oDiv=$('<div></div>');
+						oDiv.css({'position':'absolute','border':'1px solid grey'});
+						oDiv.css('width', oBgDiv.width()/W+'px');
+						oDiv.css('height',oBgDiv.height()/H+'px');
+						
+						oDiv.css('left',i*oBgDiv.width()/W+'px');
+						oDiv.css('top',bL.currentRow*oBgDiv.height()/H+'px');
+						if(bL.blackPosition==i){
+							oDiv.css('background','black');
+						}else{
+							oDiv.css('background','white');
+						}
+						oBgDiv.append(oDiv);
+						bL.divs.push(oDiv);
+						//alert('测试');
+					}
+				}
+				function eraseLine(bL){
+					for(var i=0;i<bL.divs.length;i++){
+						bL.divs[i].remove();
+					}
+				}
+				
+				//向下移动blockLine (必须先画出来,有了divs才能移动)
+				function moveBlockLine(bL,nextRow,speed){
+					for(var i=0;i<bL.divs.length;i++){
+						bL.nextRow=nextRow;
+						bL.divs[i].animate({'top':bL.nextRow*oBgDiv.height()/H+'px'},speed||100,'linear');
+					}
+				}
+				
+				function gameInit(){
+					//i<H+1,加1确保最上面多出一个;i从-1开始照顾底部动画
+					for (var i=-1;i<H+1;i++){
+						var blockLine=createBlockLine(H-1-i);
+						gameBlockLines.push(blockLine);
+						drawLine(blockLine);
+					}
+				}
+				gameInit();
+				
+				
+				//点击判定
+				$('.btnDiv').click(function(){
+					clearInterval(timer);
+					timer=setInterval(function(){
+						
+						$('.score span:eq(1)').html(score);
+						$('.score span:eq(3)').html(parseInt(time*10)/1000+'S');
+						time++;
+						//点够了100个,提示
+						if(score==100){
+							alert('点够了100个,用时'+parseInt(time*10)/1000+'秒');
+							clearInterval(timer);
+						}
+					},10);
+					var index=$('.btnDiv').index($(this));
+					if(gameBlockLines[2].blackPosition==index){
+				  	
+						//点对了,div变灰色
+						gameBlockLines[2].divs[index].css('background','grey');
+						score++;
+						
+						
+						//移动位置
+						for(var i=0;i<gameBlockLines.length;i++){
+							moveBlockLine(gameBlockLines[i],gameBlockLines[i].currentRow+1,Speed);
+							gameBlockLines[i].currentRow++;
+						}
+						//最下面删除一个
+						eraseLine(gameBlockLines[0]);
+						gameBlockLines.shift();
+						
+						//最上面添加一个
+						var bL=createBlockLine(-1);
+						gameBlockLines.push(bL);
+						drawLine(bL);
+					}else{
+						//点错了,div变红色
+						gameBlockLines[2].divs[index].css('background','red');
+						//点错后提示
+						alert('额!点错了,点了'+score+'个,用时'+parseInt(time*10)/1000+'秒');
+						clearInterval(timer);
+					}
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<div class="score"><span>得分:</span><span>0</span><span>时间:</span><span>0S</span></div>
+		<div class="stage"></div>
+	</body>
+</html>
